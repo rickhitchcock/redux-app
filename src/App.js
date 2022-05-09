@@ -95,7 +95,7 @@ const App = () => {
         <hr/>
         <label>
           Privacy:
-          <Input id="privacy"  label="Privacy"  />
+          <Input id="privacy" />
         </label>
         <hr/>
 
