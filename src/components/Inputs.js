@@ -6,7 +6,11 @@ import {
   Autocomplete as MUIAutocomplete,
   TextField,
   Radio,
-  Checkbox
+  RadioGroup,
+  FormControlLabel,
+  Checkbox,
+  FormLabel,
+
 } from '@mui/material';
 
 import React from 'react';
@@ -31,7 +35,7 @@ const keyPress = (event) => {
   }
 } // keyPress
 
-const Input = ({type, id, index, value, onInput, style, context, immediate, ...props}) => {
+const Input = ({type, name, id=name, index, value, onInput, context, immediate, ...props}) => {
   console.log(`Render: Input ${id}`);
 
   const dispatch = useDispatch();
@@ -124,99 +128,131 @@ const Input = ({type, id, index, value, onInput, style, context, immediate, ...p
     }
   }
 
-  return (
-    type === 'radio' ? 
-      <Radio
-        {...props}
-        id={id}
-        checked={val === value}
-        value={v}
-        style={{padding: 0}}
-        onChange={(e) => {
-          change(e.target.value);
-          update(e.target.value);
-          if (onInput) {
-            onInput(e);
-          }
-        }}
-      />    
-      :
-    type === 'checkbox' ? 
-      <Checkbox
-        {...props}
-        id={id}
-        checked={v}
-        style={{padding: 0}}
-        onChange={(e) => {
-          change(e.target.checked);
-          update(e.target.checked);
-          if (onInput) {
-            onInput(e);
-          }
-        }}
-      />
-      :
+  if (type === 'radio' && props.options) {
+    return (
       <>
-        {type === 'dollar' && <span style={{position: 'absolute', marginTop: '0.3rem'}}>$</span>}
-        <TextField
+        <FormLabel>{props.label}</FormLabel>
+        <RadioGroup>
+          {props.options.map((option, i) => (
+            <FormControlLabel 
+              value={option}
+              control={<Radio />}
+              label={option}
+              key={option}
+              checked={option === value}
+              onChange={(e) => {
+                change(e.target.value);
+                update(e.target.value);
+                if (onInput) {
+                  onInput(e);
+                }
+              }}
+            />
+          ))}
+        </RadioGroup>
+      </>
+    )
+  } else {
+    return (
+      type === 'radio' || name ?
+        <Radio
           {...props}
           id={id}
-          value={v === undefined ? '' : v}  // https://github.com/facebook/react/issues/6222
-
-          type={type === 'dollar' ? 'number' : type || 'text'}
-
-          fullWidth
-
-          sx={{
-            paddingLeft:  type === 'dollar' ? '0.7rem' : 0,
-            boxSizing: 'border-box',
-          }}
-
-          variant={props.variant || 'outlined'}
-
-          inputProps={{
-            role: 'presentation',
-            autoComplete: 'off',
-            style: {
-              padding: 5,
-              background: 'white'
-            },
-          }}
-
-          ref={focusRef}
-
-          onKeyPress={keyPress}
-
-          onWheel={e => e.target.blur()} // https://github.com/mui/material-ui/issues/7960#issuecomment-760367956
-
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-              e.nativeEvent.preventDefault();  // for number type
-            } else if (e.key === 'Enter') {
-              update(e.target.value);
-            }
-          }}
-          
+          name={name}
+          checked={val === value}
+          value={value}
+          style={{padding: 0}}
           onChange={(e) => {
-            const value = e.target.value;
-            change(value);
-            if (immediate) {
-              update(value);
-            }
+            change(e.target.value);
+            update(e.target.value);
             if (onInput) {
               onInput(e);
             }
           }}
-
-          onBlur={(e) => {
-            let value = e.target.value;
-            if (!immediate) {
-              update(value);
+        />    
+        :
+      type === 'checkbox' ? 
+        <Checkbox
+          {...props}
+          id={id}
+          checked={v}
+          style={{padding: 0}}
+          onChange={(e) => {
+            change(e.target.checked);
+            update(e.target.checked);
+            if (onInput) {
+              onInput(e);
             }
           }}
         />
-      </>
-  )
+        :
+        <>
+          {type === 'dollar' && <span style={{position: 'absolute', marginTop: '0.3rem'}}>$</span>}
+          <TextField
+            {...props}
+            id={id}
+            value={v === undefined ? '' : v}  // https://github.com/facebook/react/issues/6222
+
+            size="small"
+
+            type={type === 'dollar' ? 'number' : type || 'text'}
+
+            sx={{
+              display: props.fullWidth ? 'block' : 'span',
+              paddingLeft: type === 'dollar' ? '0.7rem' : 0,
+              boxSizing: 'border-box',
+              marginBottom: 1,
+            }}
+
+            variant={props.variant || 'outlined'}
+
+            inputProps={{
+              role: 'presentation',
+              autoComplete: 'off',
+              style: {
+                zpadding: 5,
+                background: 'white',
+                ...props.style
+              },
+            }}
+
+            InputLabelProps={{ style: { marginLeft: type === 'dollar' ? '0.7em' : 0} }}
+
+            ref={focusRef}
+
+            onKeyPress={keyPress}
+
+            onWheel={e => e.target.blur()} // https://github.com/mui/material-ui/issues/7960#issuecomment-760367956
+
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.nativeEvent.preventDefault();  // for number type
+              } else if (e.key === 'Enter') {
+                update(e.target.value);
+              }
+            }}
+            
+            onChange={(e) => {
+              const value = e.target.value;
+              change(value);
+              if (immediate) {
+                update(value);
+              }
+              if (onInput) {
+                onInput(e);
+              }
+            }}
+
+            onBlur={(e) => {
+              let value = e.target.value;
+              if (!immediate) {
+                update(value);
+              }
+            }}
+          />
+        </>
+    )
+  }
 } // Input
 
 const Autocomplete = ({id, index, options, value, onInput, isOptionEqualToValue, onInputChange, groupBy, renderInput, getOptionLabel, autoComplete, includeInputInList, filterSelectedOptions, onChange, context, ...props}) => {

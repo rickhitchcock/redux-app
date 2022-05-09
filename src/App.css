@@ -8,3 +8,16 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+body {
+  margin: 0.5em;
+}
+
+#Summary {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 30em;
+  background: #eee;
+  padding: 0.5em;
+  border: 1px solid #aaa;
+}

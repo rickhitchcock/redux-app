@@ -9,19 +9,25 @@ import './App.css';
 const Summary = () => {
   console.log('Render: Summary');
  
-  const name    = useSelector(get.name);
-  const address = useSelector(get.address);
-  const city    = useSelector(get.city);
-  const age     = useSelector(get.age);
-  const crops   = useSelector(get.crops);
+  const name      = useSelector(get.name);
+  const address   = useSelector(get.address);
+  const city      = useSelector(get.city);
+  const age       = useSelector(get.age);
+  const gender    = useSelector(get.gender);
+  const privacy   = useSelector(get.privacy);
+  const $price    = useSelector(get.$price);
+  const crops     = useSelector(get.crops);
 
   return (
-    <div>
+    <div id="Summary">
       <h3>Summary</h3>
       {name}<br/>
       {address}<br/>
       {city}<br/>
       {age}<br/>
+      {gender}<br/>
+      {$price}<br/>
+      {privacy ? 'Private' : ''}<br/>
       {crops.map(crop => crop).join(', ')}
     </div>
   )
@@ -50,6 +56,7 @@ const Crops = () => {
         index={crops.length}
         key={crops.length}
         immediate
+        style={{background: '#eee'}}
       />
     </>
   )
@@ -74,43 +81,30 @@ const App = () => {
       </button>
 
       <button
-        onClick={() => {
-          dispatch(set.focus('address'));
-        }}
+        onClick={() => dispatch(set.focus('address'))}
       >
         Go to address
       </button>
       <hr/>
-      <form immediate="true">
-        <table>
-          <tbody>
-            <tr>
-              <td>Name:</td>
-              <td><Input id="name" immediate autoFocus /></td>
-            </tr>
-            <tr>
-              <td>Address:</td>
-              <td><Input id="address" /></td>
-            </tr>
-            <tr>
-              <td>City:</td>
-              <td><Input id="city" /></td>
-            </tr>
-            <tr>
-              <td>Age:</td>
-              <td><Input id="age" /></td>
-            </tr>
-            <tr>
-              <td>Price:</td>
-              <td><Input id="$price" /></td>
-            </tr>
-            <tr>
-              <td>Privacy:</td>
-              <td><Input id="privacy" /></td>
-            </tr>
-          </tbody>            
-        </table>
-        
+      <form style={{width: '25rem'}}>
+        <Input id="name"     label="Name"    fullWidth immediate autoFocus/>
+        <Input id="address"  label="Address" fullWidth />
+        <Input id="city"     label="City"    fullWidth />
+        <Input id="age"      label="Age"     fullWidth />
+        <Input id="$price"   label="Price"   fullWidth />
+        <hr/>
+        <label>
+          Privacy:
+          <Input id="privacy"  label="Privacy"  />
+        </label>
+        <hr/>
+
+        <Input
+          id="gender"
+          label="Gender"
+          options={['Male', 'Female', 'Other']}
+          type="radio"
+        />
         <hr/>
         <Crops />
       </form>
