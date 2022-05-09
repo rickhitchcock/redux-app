@@ -1,13 +1,14 @@
 import {configureStore, createSlice} from '@reduxjs/toolkit';
 
 const initialState = {
-  focus: '',
-  changed: {},
   name: '',
   address: '',
   city: '',
   state: '',
   zip: '',
+  privacy: false,
+  age: undefined,
+  $price: undefined,
   crops: [],
 };
 
@@ -15,14 +16,22 @@ const sets = {};
 const gets = {};
 
 Object.keys(initialState).forEach(key => {
+  initialState['_changed' + key] = false;
+  initialState['_focus'   + key] = false;
+});
+
+Object.keys(initialState).forEach(key => {
   const isArray = Array.isArray(initialState[key]);
   const isObject = !isArray && initialState[key] !== null && typeof initialState[key] === 'object';
 
   sets[key] = (state, action) => {
-    const value = action.payload.value;
     if (isArray) {
+      const value = action.payload.value;
       const index = action.payload.index;
-      if (state[key][index] === value) {
+
+      if (state[key][index] === value ||
+          (state[key][index] === undefined && value === '')
+         ) {
         return state;
       } else {
         const a = [...state[key]];
@@ -33,6 +42,7 @@ Object.keys(initialState).forEach(key => {
         }
       }
     } else if (isObject) {
+      const value = action.payload.value;
       if (state[key][action.payload.key] === value) {
         return state;
       } else {
@@ -51,9 +61,17 @@ Object.keys(initialState).forEach(key => {
         return {
           ...state,
           [key]: action.payload,
-          changed: {...state.changed, [key]: true}
+          ['_changed' + key]: true
         }
       }
+    }
+  }
+
+  sets.focus = (state, action) => {
+    // alert('_focus' + action.payload);
+    return {
+      ...state,
+      ['_focus' + action.payload]: true
     }
   }
 
@@ -71,7 +89,7 @@ Object.keys(initialState).forEach(key => {
   }
 
   gets[key] = (state) => {
-    if (state.reducer[key] === undefined) {
+    if (!(key in state.reducer)) {
       console.log('Unknown key: ' + key);
       console.log(JSON.stringify(state.reducer, null, 2));
       alert('Unknown key: ' + key);

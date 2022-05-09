@@ -12,15 +12,46 @@ const Summary = () => {
   const name    = useSelector(get.name);
   const address = useSelector(get.address);
   const city    = useSelector(get.city);
+  const age     = useSelector(get.age);
   const crops   = useSelector(get.crops);
+
   return (
     <div>
       <h3>Summary</h3>
       {name}<br/>
       {address}<br/>
       {city}<br/>
+      {age}<br/>
       {crops.map(crop => crop).join(', ')}
     </div>
+  )
+}
+
+const Crops = () => {
+  console.log('Render: Crops');
+  const crops = useSelector(get.crops);
+
+  return (
+    <>
+      <h3>Crops</h3>
+      {crops.map((_, i) => {
+        return (
+          <Input
+            id="crops"
+            index={i}
+            key={i}
+            immediate
+            autoFocus={i === crops.length - 1}
+          />
+        )
+      })}
+      <Input
+        id="crops"
+        index={crops.length}
+        key={crops.length}
+        immediate
+      />
+    </>
   )
 }
 
@@ -28,7 +59,6 @@ const App = () => {
   console.log('Render: App');
 
   const dispatch = useDispatch();
-  const crops = useSelector(get.crops);
 
   return (
     <>
@@ -37,6 +67,7 @@ const App = () => {
           dispatch(set.name('John Doe'));
           dispatch(set.address('123 Main Street'));
           dispatch(set.city('Athens'));
+          dispatch(set.age(30));
         }}
       >
         Fill
@@ -50,7 +81,7 @@ const App = () => {
         Go to address
       </button>
       <hr/>
-      <form>
+      <form immediate="true">
         <table>
           <tbody>
             <tr>
@@ -65,23 +96,23 @@ const App = () => {
               <td>City:</td>
               <td><Input id="city" /></td>
             </tr>
+            <tr>
+              <td>Age:</td>
+              <td><Input id="age" /></td>
+            </tr>
+            <tr>
+              <td>Price:</td>
+              <td><Input id="$price" /></td>
+            </tr>
+            <tr>
+              <td>Privacy:</td>
+              <td><Input id="privacy" /></td>
+            </tr>
           </tbody>            
         </table>
         
         <hr/>
-        <h3>Crops</h3>
-        {
-          crops.map((_, i) => {
-            return (
-              <div key={i}>
-                <Input id="crops" index={i} />
-              </div>
-            )
-          })
-        }
-        <div key={crops.length}>
-          <Input id="crops" index={crops.length} />
-        </div>
+        <Crops />
       </form>
       <hr/>
       <Summary/>

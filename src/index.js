@@ -16,7 +16,8 @@ root.render(
 
 const originalLog = console.log;
 
-console.log = (...s) => {
+console.zlog = function(...s) {
+  // originalLog(s);
   if (!/^%c/.test(s)) { // annoying
     originalLog(...s);
   }

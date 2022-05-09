@@ -9,7 +9,6 @@ import {
   Checkbox
 } from '@mui/material';
 
-import NumberFormat from 'react-number-format';
 import React from 'react';
 
 const keyPress = (event) => {
@@ -25,6 +24,7 @@ const keyPress = (event) => {
       }
       if (form.elements[index]) {
         form.elements[index].focus();
+        form.elements[index].select();
       }
       event.preventDefault();
     }
@@ -33,12 +33,13 @@ const keyPress = (event) => {
 
 const Input = ({type, id, index, value, onInput, style, context, immediate, ...props}) => {
   console.log(`Render: Input ${id}`);
+
   const dispatch = useDispatch();
-  const focus = useSelector(get.focus);
-  const changed = useSelector(get.changed)[id];
+  const focus = useSelector(get['_focus' + id]);
+  const changed = useSelector(get['_changed' + (context || id)]);
   const focusRef = useRef(null);
 
-  const sel = context ? get[context] : get[id];
+  const sel = get[context || id];
   if (!sel) {
     alert('Unknown Input: ' + id);
   }
@@ -46,6 +47,17 @@ const Input = ({type, id, index, value, onInput, style, context, immediate, ...p
   let sel2 = useSelector(sel);
   const isArray = Array.isArray(sel2);
 
+  if (!type && /\$/.test(id)) {
+    type = 'dollar';
+  }
+
+  type = type                               ? type :
+         sel2 === undefined                 ? 'number' :
+         /number|dollar/.test(typeof sel2)  ? 'number' :
+         typeof sel2 === 'boolean'          ? 'checkbox' :
+                                              'text';
+
+  // console.log(id, typeof sel2);
   let val;
 
   if (context) {
@@ -56,38 +68,39 @@ const Input = ({type, id, index, value, onInput, style, context, immediate, ...p
     val = sel2;
   }
 
-  let [v, setValue] = useState(value || val);
+  if (type === 'dollar' && val) {
+    val = (+val).toFixed(2);
+  }
 
-  useEffect(() => {
-    if (focus === id) {
-      const input = focusRef.current.querySelector('input');
-      input.focus();
-      input.select();
-      dispatch(set.focus(''));
-    }
-  }, [focus, id, dispatch]);
+  let [v, setValue] = useState(value || val);
 
   useEffect(() => {
     if (changed) {
       setValue(val);
-      dispatch(set.changed({key: id, value: false}));
     }
-  }, [dispatch, changed, val, id]);
+    if (focus) {
+      const input = focusRef.current.querySelector('input');
+      input.focus();
+      input.select();
+      dispatch(set['_focus' + id](false));
+    }
+  }, [changed, val, focus, id, dispatch]);
 
   // console.log(context, id, val, v);
 
-  useEffect(() => {
-    setValue(value);
-  }, [value])
-
   const change = (value) => {
     setValue(value);
-    if (immediate) {
-      update(value);
-    }
   } // change
 
   const update = (value) => {
+    if (/dollar|number/.test(type)) {
+      if (value === '') {
+        value = undefined;
+      } else {
+        value = +value;
+      }
+    }
+
     if (isArray) {
       if (sel2[index] !== value) {
         dispatch(set[id]({value, index}));
@@ -95,7 +108,7 @@ const Input = ({type, id, index, value, onInput, style, context, immediate, ...p
     } else if (context) {
       dispatch(set[context]({key: id, value}));
     } else {
-      dispatch(set[id](value.description || value));
+      dispatch(set[id](value));
     }
   } // update
 
@@ -130,6 +143,7 @@ const Input = ({type, id, index, value, onInput, style, context, immediate, ...p
       :
     type === 'checkbox' ? 
       <Checkbox
+        {...props}
         id={id}
         checked={v}
         style={{padding: 0}}
@@ -140,87 +154,68 @@ const Input = ({type, id, index, value, onInput, style, context, immediate, ...p
             onInput(e);
           }
         }}
-      />    
-      :
-    type === 'dollar' ?
-      <NumberFormat
-        {...props}
-        id={id}
-        autoComplete="off"
-
-        onKeyPress={keyPress}
-        
-        value={v}
-
-        style={style}
-
-        onChange={(e) => {
-          const value = e.target.value || '';
-          change(value.replace('$', ''));
-          if (onInput) {
-            onInput(e);
-          }
-        }}
-
-        onBlur={(event) => {
-          if (!immediate) {
-            update(event.target.value);
-          }
-        }}
-
-        decimalScale={2}
-        fixedDecimalScale={true}
-        prefix={'$'}
-    
-        type="text"
       />
       :
-      <TextField
-        {...props}
-        id={id}
-        // variant={props.variant || (props.label ? 'outlined' : 'standard')}
-        variant={props.variant || 'outlined'}
+      <>
+        {type === 'dollar' && <span style={{position: 'absolute', marginTop: '0.3rem'}}>$</span>}
+        <TextField
+          {...props}
+          id={id}
+          value={v === undefined ? '' : v}  // https://github.com/facebook/react/issues/6222
 
-        inputProps={{
-          role: 'presentation',
-          autoComplete: 'off',
-          style: {
-            padding: 5,
-            background: 'white'
-          },
-        }}
+          type={type === 'dollar' ? 'number' : type || 'text'}
 
-        ref={focus === id ? focusRef : null}
+          fullWidth
 
-        onKeyPress={keyPress}
+          sx={{
+            paddingLeft:  type === 'dollar' ? '0.7rem' : 0,
+            boxSizing: 'border-box',
+          }}
 
-        onWheel={e => e.target.blur()} // https://github.com/mui/material-ui/issues/7960#issuecomment-760367956
+          variant={props.variant || 'outlined'}
 
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.nativeEvent.preventDefault();  // for number type
-          } else if (e.key === 'Enter') {
-            update(e.target.value);
-          }
-        }}
-        
-        value={v}
+          inputProps={{
+            role: 'presentation',
+            autoComplete: 'off',
+            style: {
+              padding: 5,
+              background: 'white'
+            },
+          }}
 
-        onChange={(event) => {
-          change(event.target.value);
-          if (onInput) {
-            onInput(event);
-          }
-        }}
+          ref={focusRef}
 
-        onBlur={(e) => {
-          if (!immediate) {
-            update(e.target.value);
-          }
-        }}
+          onKeyPress={keyPress}
 
-        type={type || 'text'}
-      />
+          onWheel={e => e.target.blur()} // https://github.com/mui/material-ui/issues/7960#issuecomment-760367956
+
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+              e.nativeEvent.preventDefault();  // for number type
+            } else if (e.key === 'Enter') {
+              update(e.target.value);
+            }
+          }}
+          
+          onChange={(e) => {
+            const value = e.target.value;
+            change(value);
+            if (immediate) {
+              update(value);
+            }
+            if (onInput) {
+              onInput(e);
+            }
+          }}
+
+          onBlur={(e) => {
+            let value = e.target.value;
+            if (!immediate) {
+              update(value);
+            }
+          }}
+        />
+      </>
   )
 } // Input
 
