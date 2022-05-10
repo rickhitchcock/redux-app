@@ -35,20 +35,21 @@ const keyPress = (event) => {
   }
 } // keyPress
 
-const Input = ({type, name, id=name, index, value, onInput, context, immediate, ...props}) => {
+const Input = ({type, name, id=name, property, index, value, onInput, immediate, ...props}) => {
   console.log(`Render: Input ${id}`);
 
   const dispatch = useDispatch();
   const focus = useSelector(get['_focus' + id]);
-  const changed = useSelector(get['_changed' + (context || id)]);
+  const changed = useSelector(get['_changed' + id]);
   const focusRef = useRef(null);
 
-  const sel = get[context || id];
+  const sel = get[id];
   if (!sel) {
     alert('Unknown Input: ' + id);
   }
   
   let sel2 = useSelector(sel);
+
   const isArray = Array.isArray(sel2);
 
   if (!type && /\$/.test(id)) {
@@ -64,8 +65,8 @@ const Input = ({type, name, id=name, index, value, onInput, context, immediate, 
   // console.log(id, typeof sel2);
   let val;
 
-  if (context) {
-    val = sel2[id];
+  if (property) {
+    val = sel2[property];
   } else if (isArray) {
     val = sel2[index] || '';
   } else {
@@ -90,8 +91,6 @@ const Input = ({type, name, id=name, index, value, onInput, context, immediate, 
     }
   }, [changed, val, focus, id, dispatch]);
 
-  // console.log(context, id, val, v);
-
   const change = (value) => {
     setValue(value);
   } // change
@@ -107,10 +106,10 @@ const Input = ({type, name, id=name, index, value, onInput, context, immediate, 
 
     if (isArray) {
       if (sel2[index] !== value) {
-        dispatch(set[id]({value, index}));
+        dispatch(set[id]({index, value}));
       }
-    } else if (context) {
-      dispatch(set[context]({key: id, value}));
+    } else if (property) {
+      dispatch(set[id]({property, value}));
     } else {
       dispatch(set[id](value));
     }
@@ -136,6 +135,7 @@ const Input = ({type, name, id=name, index, value, onInput, context, immediate, 
           {props.options.map((option, i) => (
             <FormControlLabel 
               value={option}
+              key={option}
               control={<Radio />}
               label={props.labels ? props.labels[i] : option}
               checked={option.toString() === value.toString()}
@@ -234,7 +234,7 @@ const Input = ({type, name, id=name, index, value, onInput, context, immediate, 
             onChange={(e) => {
               const value = e.target.value;
               change(value);
-              if (immediate) {
+              if (immediate || e.target.form.getAttribute('options').includes('immediate')) {
                 update(value);
               }
               if (onInput) {
@@ -244,7 +244,7 @@ const Input = ({type, name, id=name, index, value, onInput, context, immediate, 
 
             onBlur={(e) => {
               let value = e.target.value;
-              if (!immediate) {
+              if (!(immediate || e.target.form.getAttribute('options').includes('immediate'))) {
                 update(value);
               }
             }}

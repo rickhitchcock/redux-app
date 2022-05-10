@@ -17,6 +17,7 @@ const Summary = () => {
   const privacy   = useSelector(get.privacy);
   const $price    = useSelector(get.$price);
   const crops     = useSelector(get.crops);
+  const client    = useSelector(get.client);
 
   return (
     <div id="Summary">
@@ -29,6 +30,7 @@ const Summary = () => {
       {$price}<br/>
       {privacy ? 'Private' : ''}<br/>
       {crops.map(crop => crop).join(', ')}
+      {Object.entries(client).map(([key, value]) => <div key={key} >{key}: {value}</div>)}
     </div>
   )
 }
@@ -62,6 +64,19 @@ const Crops = () => {
   )
 }
 
+const Client = () => {
+  console.log('Render: Client');
+  useSelector(get.client);
+
+  return (
+    <>
+      <Input id="client" property="name" />
+      <Input id="client" property="address" />
+      <Input id="client" property="city" />
+    </>
+  )
+} // Client
+
 const App = () => {
   console.log('Render: App');
 
@@ -86,8 +101,8 @@ const App = () => {
         Go to address
       </button>
       <hr/>
-      <form style={{width: '25rem'}}>
-        <Input id="name"     label="Name"    fullWidth immediate autoFocus/>
+      <form options="immediate" style={{width: '25rem'}}>
+        <Input id="name"     label="Name"    fullWidth autoFocus/>
         <Input id="address"  label="Address" fullWidth />
         <Input id="city"     label="City"    fullWidth />
         <Input id="age"      label="Age"     fullWidth />
@@ -108,6 +123,8 @@ const App = () => {
         />
         <hr/>
         <Crops />
+        <hr/>
+        <Client />
       </form>
       <hr/>
       <Summary/>

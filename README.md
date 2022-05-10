@@ -7,13 +7,16 @@ const initialState = {
   name: '',
   address: '',
   city: '',
-  state: '',
-  zip: '',
+  client: {
+    name: '',
+    address: '',
+    city: '',
+  },
   privacy: false,
   age: undefined,
   $price: undefined,
   crops: [],
-  gender: '',
+  number: '',
 };
 ```
 
@@ -26,6 +29,11 @@ To write to the store:
 ```
 const dispatch = useDispatch();
 dispatch(set.name('John Doe'));
+dispatch(set.age(30));
+dispatch(set.$price(25));
+dispatch(set.crops({index: 0, value: 'Crimson Clover'}));
+dispatch(set.crops({index: 1, value: 'Ryegrass'}));
+dispatch(set.client({property: 'name', value: 'Henry Higgins'});
 ```
 
 Note that `dispatch` should be called only within an event handler or within `useEffect()`.
@@ -52,12 +60,30 @@ The default type can be overwritten using the `type` property:
 <Input id="age" type="text" />
 ```
 
+### Arrays ###
+If the store's variable is an array, include an `index` property:
+```
+<Input id="crops" index={0} />
+<Input id="crops" index={1} />
+<Input id="crops" index={2} />
+```
 
-By default, changes to an `<Input>` are not committed to the store unless **Enter** is pressed or the `<Input>` component is blurred.
+### Objects ###
+If the store's variable is an object (but not an array), include a `property` prop:
+```
+<Input id="client" property="name" />
+```
+
+By default, changes to an `<Input>` are not committed to the store unless **Enter** is pressed or the `<Input>` component is blurred.  (This is in keeping with the Redux recommendation to [Avoid Putting Form State In Redux](https://redux.js.org/style-guide/#avoid-putting-form-state-in-redux).)
 
 If changes should be committed immediately, include `immediate` as a property:
 ```
 <Input id="name" immediate />
+```
+
+If you want all `<Input>` elements to be committed to the store immediately, include `options="immediate"` on the form itself:
+```
+<form options="immediate">
 ```
 
 ### Focusing `<Input>` ###

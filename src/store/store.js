@@ -6,6 +6,11 @@ const initialState = {
   city: '',
   state: '',
   zip: '',
+  client: {
+    name: '',
+    address: '',
+    city: '',
+  },
   privacy: false,
   age: undefined,
   $price: undefined,
@@ -39,7 +44,8 @@ Object.keys(initialState).forEach(key => {
         a[index] = value;
         return {
           ...state,
-          [key]: a
+          [key]: a,
+          ['_changed' + key]: true
         }
       }
     } else if (isObject) {
@@ -48,11 +54,12 @@ Object.keys(initialState).forEach(key => {
         return state;
       } else {
         const o = {...state[key]};
-        o[action.payload.key] = value;
+        o[action.payload.property] = value;
 
         return {
           ...state,
-          [key]: o
+          [key]: o,
+          ['_changed' + key]: true
         }
       }
     } else {
