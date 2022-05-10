@@ -70,9 +70,20 @@ dispatch(set.focus('address'));
 A radio group can be created like this:
 ```
 <Input
-  id="gender"
-  label="Gender"
-  options={['Male', 'Female', 'Other']}
+  id="number"
+  label="Pick a number"
+  options={[1, 2, 3]}
+  type="radio"
+/>
+```
+
+If the radio buttons' labels should be different from their values, do this:
+```
+<Input
+  id="number"
+  label="Pick a number"
+  options={[1, 2, 3]}
+  labels={['One', 'Two', 'Three']}
   type="radio"
 />
 ```

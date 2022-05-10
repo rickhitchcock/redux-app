@@ -10,7 +10,7 @@ const initialState = {
   age: undefined,
   $price: undefined,
   crops: [],
-  gender: '',
+  number: '',
 };
 
 const sets = {};

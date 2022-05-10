@@ -137,9 +137,8 @@ const Input = ({type, name, id=name, index, value, onInput, context, immediate, 
             <FormControlLabel 
               value={option}
               control={<Radio />}
-              label={option}
-              key={option}
-              checked={option === value}
+              label={props.labels ? props.labels[i] : option}
+              checked={option.toString() === value.toString()}
               onChange={(e) => {
                 change(e.target.value);
                 update(e.target.value);

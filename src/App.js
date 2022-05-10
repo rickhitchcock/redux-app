@@ -13,7 +13,7 @@ const Summary = () => {
   const address   = useSelector(get.address);
   const city      = useSelector(get.city);
   const age       = useSelector(get.age);
-  const gender    = useSelector(get.gender);
+  const number    = useSelector(get.number);
   const privacy   = useSelector(get.privacy);
   const $price    = useSelector(get.$price);
   const crops     = useSelector(get.crops);
@@ -25,7 +25,7 @@ const Summary = () => {
       {address}<br/>
       {city}<br/>
       {age}<br/>
-      {gender}<br/>
+      {number}<br/>
       {$price}<br/>
       {privacy ? 'Private' : ''}<br/>
       {crops.map(crop => crop).join(', ')}
@@ -100,9 +100,10 @@ const App = () => {
         <hr/>
 
         <Input
-          id="gender"
-          label="Gender"
-          options={['Male', 'Female', 'Other']}
+          id="number"
+          label="Pick a number"
+          options={[1, 2, 3]}
+          labels={['One', 'Two', 'Three']}
           type="radio"
         />
         <hr/>
