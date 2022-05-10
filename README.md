@@ -76,6 +76,7 @@ A radio group can be created like this:
   type="radio"
 />
 ```
+![Output](https://raw.githubusercontent.com/rickhitchcock/redux-app/master/images/RadioButton1.png)
 
 If the radio buttons' labels should be different from their values, do this:
 ```
@@ -87,3 +88,4 @@ If the radio buttons' labels should be different from their values, do this:
   type="radio"
 />
 ```
+![Output](https://raw.githubusercontent.com/rickhitchcock/redux-app/master/images/RadioButton2.png)
