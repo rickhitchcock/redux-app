@@ -34,7 +34,7 @@ const keyPress = (event) => {
   }
 } // keyPress
 
-const Input = ({type, id, options, isOptionEqualToValue, renderInput, index='', value, onChange, onInput, immediate, ...props}) => {
+const Input = ({type, id, options, isOptionEqualToValue, renderInput, index='', value, onChange, onInput, ...props}) => {
   console.log(`Render: Input ${id}`);
   const dispatch = useDispatch();
 
@@ -76,6 +76,16 @@ const Input = ({type, id, options, isOptionEqualToValue, renderInput, index='', 
                                                       'text';
 
   let val = isArray ? sel2[index] || '' : sel2;
+
+  const [immediate, setImmediate] = useState(props.immediate);
+
+  useEffect(() => {
+    const form = focusRef.current?.closest('form');
+    if (!immediate && form) {
+      setImmediate((form.getAttribute('options') || '').includes('immediate'));
+    }
+    console.log(id, focusRef.current?.closest('form'));
+  }, [immediate, focusRef, id]);
 
   if (type === 'dollar' && val && !immediate) {
     val = (+val).toFixed(2);
@@ -305,13 +315,17 @@ const Input = ({type, id, options, isOptionEqualToValue, renderInput, index='', 
             
             onChange={(e) => {
               change(e.target.value);
-              if (immediate || (e.target.form && (e.target.form.getAttribute('options') || '').includes('immediate'))) {
+              if (immediate) {
                 update(e, e.target.value);
               }
             }}
 
             onBlur={(e) => {
-              if (!(immediate || (e.target.form && (e.target.form.getAttribute('options') || '').includes('immediate')))) {
+              if (type === 'dollar' && immediate) {
+                setValue((+e.target.value).toFixed(2));
+              }
+          
+              if (!immediate) {
                 update(e, e.target.value);
               }
             }}
