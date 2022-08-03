@@ -4,7 +4,6 @@ const initialState = {
   focus: null,
   firstName: '',
   lastName: '',
-  random: (state) => Math.random(state.fullName),
   address: '',
   city: '',
   deeply: {
