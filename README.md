@@ -1,41 +1,42 @@
-## Development ##
+# Redux simplified
+## Development
 This is a React + Redux project.
 
-### The Redux store ###
+### The Redux store
 
-#### Setters and getters ####
+#### Setters and getters
 To simplify Redux development, setters and getters are automatically created for everything in the store, including nested properties.
 
 Given:
 ```
 const initialState = {
-  screen: 'Home',
-  seedbed: {
-    total: 0
-  }
-}
+  firstName: '',
+  client: {
+    firstName: '',
+  },
+};
 ```
 
 To write to the store:
 ```
 import {set} from '../store/store';
 const dispatch = useDispatch();
-dispatch(set.screen('Seedbed'));
-dispatch(set.seedbed.total(999));
+dispatch(set.firstName('John'));
+dispatch(set.client.firstName('Mary'));
 ```
 
 To read from the store:
 ```
 import {get} from '../store/store';
-const screen = useSelector(get.screen);
-const total = useSelector(get.seedbed.total);
+const firstName = useSelector(get.firstName);
+const clientfirstName = useSelector(get.client.firstName);
 ```
 
 You can still access the store like this:
 ```
 import {get} from '../store/store';
-const screen = useSelector(state => state.screen);
-const total = useSelector(state => state.seedbed.total);
+const firstName = useSelector(state => state.firstName);
+const clientfirstName = useSelector(state => state.client.firstName);
 ```
 
 The `get` methods are simply syntactic sugar, which *may* be slightly slower for deeply nested properties.
