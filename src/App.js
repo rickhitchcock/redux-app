@@ -8,29 +8,12 @@ import './App.css';
 
 const Summary = () => {
   console.log('Render: Summary');
- 
-  const name      = useSelector(get.name);
-  const address   = useSelector(get.address);
-  const city      = useSelector(get.city);
-  const age       = useSelector(get.age);
-  const number    = useSelector(get.number);
-  const privacy   = useSelector(get.privacy);
-  const $price    = useSelector(get.$price);
-  const crops     = useSelector(get.crops);
-  const client    = useSelector(get.client);
+  const state = useSelector(state => state);
 
   return (
     <div id="Summary">
-      <h3>Summary</h3>
-      {name}<br/>
-      {address}<br/>
-      {city}<br/>
-      {age}<br/>
-      {number}<br/>
-      {$price}<br/>
-      {privacy ? 'Private' : ''}<br/>
-      {crops.map(crop => crop).join(', ')}
-      {Object.entries(client).map(([key, value]) => <div key={key} >{key}: {value}</div>)}
+      <h3>state</h3>
+      {JSON.stringify(state, null, 2)}
     </div>
   )
 }
@@ -48,7 +31,6 @@ const Crops = () => {
             id="crops"
             index={i}
             key={i}
-            immediate
             autoFocus={i === crops.length - 1}
           />
         )
@@ -57,7 +39,6 @@ const Crops = () => {
         id="crops"
         index={crops.length}
         key={crops.length}
-        immediate
         style={{background: '#eee'}}
       />
     </>
@@ -70,9 +51,11 @@ const Client = () => {
 
   return (
     <>
-      <Input id="client" property="name" />
-      <Input id="client" property="address" />
-      <Input id="client" property="city" />
+      <Input id="client.firstName" label="client.firstName" immediate fullWidth />
+      <Input id="client.lastName"  label="client.lastName"  immediate fullWidth />
+      <Input id="client.fullName"  label="client.fullName"  fullWidth />
+      <Input id="client.address"   label="client.address"   fullWidth />
+      <Input id="client.city"      label="client.city"      fullWidth />
     </>
   )
 } // Client
@@ -86,27 +69,33 @@ const App = () => {
     <>
       <button
         onClick={() => {
-          dispatch(set.name('John Doe'));
+          dispatch(set.firstName('John'));
+          dispatch(set.lastName('Doe'));
           dispatch(set.address('123 Main Street'));
           dispatch(set.city('Athens'));
           dispatch(set.age(30));
+          dispatch(set.client.firstName('Mary'));
+          dispatch(set.client.lastName('Doe'));
+          dispatch(set.client.address('125 Elm Street'));
+          dispatch(set.client.city('Metropolis'));
         }}
       >
         Fill
       </button>
 
       <button
-        onClick={() => dispatch(set.focus('address'))}
+        onClick={() => dispatch(set.focus('client.firstName'))}
       >
-        Go to address
+        Focus client
       </button>
       <hr/>
-      <form options="immediate" style={{width: '25rem'}}>
-        <Input id="name"     label="Name"    fullWidth autoFocus/>
-        <Input id="address"  label="Address" fullWidth />
-        <Input id="city"     label="City"    fullWidth />
-        <Input id="age"      label="Age"     fullWidth />
-        <Input id="$price"   label="Price"   fullWidth />
+      <form style={{width: '25rem'}}>
+        <Input id="firstName" label="firstName" fullWidth immediate autoFocus/>
+        <Input id="lastName"  label="lastName"  fullWidth immediate />
+        <Input id="address"   label="address"   fullWidth />
+        <Input id="city"      label="city"      fullWidth />
+        <Input id="age"       label="age"       fullWidth />
+        <Input id="$price"    label="$price"    fullWidth />
         <hr/>
         <label>
           Privacy:

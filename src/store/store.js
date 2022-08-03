@@ -1,13 +1,17 @@
-import {configureStore, createSlice} from '@reduxjs/toolkit';
+import {configureStore, createAction, createReducer} from '@reduxjs/toolkit';
 
 const initialState = {
-  name: '',
+  focus: null,
+  firstName: '',
+  lastName: '',
+  fullName: (state) => state.firstName + ' ' + state.lastName,
+  random: (state) => Math.random(state.fullName),
   address: '',
   city: '',
-  state: '',
-  zip: '',
   client: {
-    name: '',
+    firstName: '',
+    lastName: '',
+    fullName: (state) => state.client.firstName + ' ' + state.client.lastName,
     address: '',
     city: '',
   },
@@ -21,106 +25,129 @@ const initialState = {
 const sets = {};
 const gets = {};
 
-Object.keys(initialState).forEach(key => {
-  initialState['_changed' + key] = false;
-  initialState['_focus'   + key] = false;
-});
+const funcs = {};
+const methods = {};
 
-Object.keys(initialState).forEach(key => {
-  const isArray = Array.isArray(initialState[key]);
-  const isObject = !isArray && initialState[key] !== null && typeof initialState[key] === 'object';
-
-  sets[key] = (state, action) => {
-    if (isArray) {
-      const value = action.payload.value;
-      const index = action.payload.index;
-
-      if (state[key][index] === value ||
-          (state[key][index] === undefined && value === '')
-         ) {
-        return state;
-      } else {
-        const a = [...state[key]];
-        a[index] = value;
-        return {
-          ...state,
-          [key]: a,
-          ['_changed' + key]: true
-        }
-      }
-    } else if (isObject) {
-      const value = action.payload.value;
-      if (state[key][action.payload.key] === value) {
-        return state;
-      } else {
-        const o = {...state[key]};
-        o[action.payload.property] = value;
-
-        return {
-          ...state,
-          [key]: o,
-          ['_changed' + key]: true
-        }
-      }
-    } else {
-      if (state[key] === action.payload) {
-        return state;
-      } else {
-        return {
-          ...state,
-          [key]: action.payload,
-          ['_changed' + key]: true
-        }
-      }
-    }
-  }
-
-  sets.focus = (state, action) => {
-    // alert('_focus' + action.payload);
-    return {
-      ...state,
-      ['_focus' + action.payload]: true
-    }
-  }
-
-  if (isArray) {
-    sets['remove' + key] = (state, action) => {
-      console.log(key);
-      console.log(action);
-      const a = [...state[key]];
-      a.splice(action.payload, 1);
-      return {
-        ...state,
-        [key]: a
-      }
-    }
-  }
-
-  gets[key] = (state) => {
-    if (!(key in state.reducer)) {
-      console.log('Unknown key: ' + key);
-      console.log(JSON.stringify(state.reducer, null, 2));
-      alert('Unknown key: ' + key);
-    } else {
-      return state.reducer[key];
+const processMethods = ((state, key) => {
+  if (methods[key]) {
+    for (let k in methods[key]) {
+      let st = state;
+      for (const key of k.split('.').slice(0, -1)) st = st[key];
+      const l = k.includes('.') ? k.split('.').slice(-1)[0] : k;
+      st[l] = methods[key][k](state);
+      processMethods(state, k);
     }
   }
 });
 
-const slice = createSlice({
-  name: 'app',
-  initialState,
-  reducers: {
-    ...sets,
-  },
-});
+const afterChange = {};
+
+const builders = (builder) => {
+  const recurse = (obj, set, get, parents = []) => {
+    Object.keys(obj).forEach((key) => {
+      const isArray = Array.isArray(obj[key]);
+      const isObject = !isArray && obj[key] instanceof Object;
+      const fullkey = parents.length ? parents.join('.') + '.' + key : key;
+
+      if (key !== 'name') { // TODO
+        get[key] = (state) => {
+          let st = state;
+          for (const k of parents) st = st[k];
+
+          if (!st) {
+            alert('Unknown: ' + fullkey);
+          }
+          return st[key];
+        }
+
+        if (typeof obj[key] === 'function') {
+          funcs[fullkey] = obj[key];
+          let m = obj[key].toString().match(/\b(state|e)\b\.[$_\w.(]+/g);  // state.* unbuilt, e.* built
+          if (m) {
+            console.log(m);
+            m = m.map(s => s.split(/\./).slice(1).join('.')?.split(/\.\w+\(/)[0]);  // remove .forEach(, etc.
+            console.log(m);
+            // m = m.map(s => s.split(/\./)[1]);  // remove .forEach(, etc.
+            m.forEach(m => {
+              methods[m] = methods[m] || {};
+              methods[m][fullkey] = funcs[fullkey];
+            });
+          }
+  
+          obj[key] = obj[key](initialState);
+          // return;
+        }
+      }
+
+      if (key !== 'name') { // TODO
+        set[key] = createAction(fullkey);
+
+        builder
+          .addCase(set[key], (state, action) => {
+            let st = state;
+            for (const k of parents) st = st[k];
+
+            if (isArray && Number.isFinite(action.payload.index)) {
+              const {index, value} = action.payload;
+              if (st[key][index] !== value) { // TODO: is this check needed?
+                st[key][index] = value;
+              }
+            } else {
+              if (st[key] !== action.payload) { // TODO: is this check needed?
+                st[key] = action.payload;
+              }
+            }
+            
+            if (afterChange[fullkey]) {
+              const ac = afterChange[fullkey](state, action);
+              if (ac) {
+                ac.forEach(parm => afterChange[parm](state, action));
+              }
+            }
+
+            // TODO:  Is the first of these needed?
+              processMethods(state, key);
+              processMethods(state, fullkey);
+
+            if (afterChange[fullkey]) {
+              let m = afterChange[fullkey].toString().match(/state.[$_\w.(]+/g);
+          
+              if (m) {
+                m = m.forEach(s => {
+                  s = s.split('state.')[1];
+                  if (s) {
+                    processMethods(state, s.split(/\.\w+\(/)[0]);
+                  }
+                });
+              }
+            }
+          }
+        );
+      }
+
+      if (isObject) {
+        recurse(obj[key], set[key], get[key], [...parents, key]);
+      }
+    });
+  } // recurse
+
+  recurse(initialState, sets, gets);
+} // builders
+
+export const runBuilders = () => createReducer(initialState, builders);
 
 const mystore = configureStore({
-  reducer: {
-    reducer: slice.reducer
-  },
+  reducer: createReducer(initialState, builders)
 });
 
 export const store = mystore;
-export const set = slice.actions;
+
+export const set = sets;
 export const get = gets;
+
+console.log({
+  set,
+  get,
+  funcs,
+  methods
+});

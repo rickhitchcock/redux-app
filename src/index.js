@@ -13,12 +13,3 @@ root.render(
     </Provider>
   </React.StrictMode>
 );
-
-const originalLog = console.log;
-
-console.zlog = function(...s) {
-  // originalLog(s);
-  if (!/^%c/.test(s)) { // annoying
-    originalLog(...s);
-  }
-}

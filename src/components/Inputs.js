@@ -1,4 +1,4 @@
-import {useEffect, useState, useRef} from 'react';
+import {useEffect, useState, useRef, useCallback} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {get, set} from '../store/store';
 
@@ -10,7 +10,6 @@ import {
   FormControlLabel,
   Checkbox,
   FormLabel,
-
 } from '@mui/material';
 
 import React from 'react';
@@ -35,20 +34,34 @@ const keyPress = (event) => {
   }
 } // keyPress
 
-const Input = ({type, name, id=name, property, index, value, onInput, immediate, ...props}) => {
+const Input = ({type, id, options, isOptionEqualToValue, renderInput, index='', value, onChange, onInput, immediate, ...props}) => {
   console.log(`Render: Input ${id}`);
-
   const dispatch = useDispatch();
-  const focus = useSelector(get['_focus' + id]);
-  const changed = useSelector(get['_changed' + id]);
+
+  let obj = id;
+  if (Number.isFinite(index)) {
+    obj += index;
+  }
+
+  const focus = useSelector(get.focus) === obj;
   const focusRef = useRef(null);
 
-  const sel = get[id];
+  let sel = get;
+
+  id.split('.').forEach(k => sel = sel[k]);
   if (!sel) {
-    alert('Unknown Input: ' + id);
+    console.warn('Unknown Input: ' + id);
   }
-  
+
   let sel2 = useSelector(sel);
+
+  if (sel2 && type === 'percent') {
+    sel2 = sel2 * 100;
+  }
+
+  const [v2, setv2] = useState(value || sel2);
+
+  const [changed, setChanged] = useState(false);
 
   const isArray = Array.isArray(sel2);
 
@@ -56,66 +69,96 @@ const Input = ({type, name, id=name, property, index, value, onInput, immediate,
     type = 'dollar';
   }
 
-  type = type                               ? type :
-         sel2 === undefined                 ? 'number' :
-         /number|dollar/.test(typeof sel2)  ? 'number' :
-         typeof sel2 === 'boolean'          ? 'checkbox' :
-                                              'text';
+  type = type                                       ? type :
+         sel2 === undefined                         ? 'number' :
+         /number|dollar|percent/.test(typeof sel2)  ? 'number' :
+         typeof sel2 === 'boolean'                  ? 'checkbox' :
+                                                      'text';
 
-  // console.log(id, typeof sel2);
-  let val;
-
-  if (property) {
-    val = sel2[property];
-  } else if (isArray) {
-    val = sel2[index] || '';
-  } else {
-    val = sel2;
-  }
+  let val = isArray ? sel2[index] || '' : sel2;
 
   if (type === 'dollar' && val) {
     val = (+val).toFixed(2);
   }
 
-  let [v, setValue] = useState(value || val);
+  let [v, setValue] = useState(val);
+
+  useEffect(() => {
+    if (v2 !== sel2 || v2 !== value) {
+      setChanged(true);
+    }
+  }, [v2, value, sel2]);
 
   useEffect(() => {
     if (changed) {
+      setv2(val);
       setValue(val);
+      setChanged(false);
     }
-    if (focus) {
-      const input = focusRef.current.querySelector('input');
-      input.focus();
-      input.select();
-      dispatch(set['_focus' + id](false));
+    if (focus) { // TODO: is props.autoFocus working?
+      if (focusRef.current) {
+        const input = focusRef.current.querySelector('input');
+        input.focus();
+        setTimeout(() => {
+          input.focus();
+          dispatch(set.focus(null));
+        }, 100);
+      }
     }
-  }, [changed, val, focus, id, dispatch]);
+  }, [changed, val, focus, dispatch, props]);
 
   const change = (value) => {
     setValue(value);
   } // change
 
-  const update = (value) => {
-    if (/dollar|number/.test(type)) {
-      if (value === '') {
-        value = undefined;
+  const update = useCallback((e, newValue) => {
+    // eslint-disable-next-line
+    if (newValue == value && sel2 !== undefined) return;  // == in case numeric
+
+    setChanged(true);
+
+    if (/dollar|number|percent/.test(type)) {
+      if (newValue === '') {
+        newValue = undefined;
       } else {
-        value = +value;
+        newValue = +newValue;
       }
+    }
+
+    let s = set;
+    id.split('.').forEach(k => s = s[k]);
+
+    if (type === 'percent') {
+      newValue /= 100;
     }
 
     if (isArray) {
-      if (sel2[index] !== value) {
-        dispatch(set[id]({index, value}));
+      if (sel2[index] !== newValue) {
+        dispatch(s({index, value: newValue}));
       }
-    } else if (property) {
-      dispatch(set[id]({property, value}));
-    } else {
-      dispatch(set[id](value));
+    } else if (sel2 !== newValue) {
+      dispatch(s(newValue));
     }
-  } // update
+
+    if (onChange) {
+      onChange(e, newValue);
+    }
+  }, [onChange, value, dispatch, id, index, isArray, sel2, type]); // update
 
   value = value !== undefined ? value : val;
+
+  if (/dollar|percent/.test(type)) {
+    props.className = (props.className || '') + ' ' + type;
+  }
+
+  useEffect(() => {
+    if (value) {
+      update(
+        {target: {value}},
+        value
+      );
+    }
+  }, [update, value, type]);
 
   if (type === 'checkbox') {
     if (value === '') {
@@ -127,49 +170,80 @@ const Input = ({type, name, id=name, property, index, value, onInput, immediate,
     }
   }
 
-  if (type === 'radio' && props.options) {
+  if (type === 'radio' && options) {
     return (
       <>
         <FormLabel>{props.label}</FormLabel>
-        <RadioGroup>
-          {props.options.map((option, i) => (
+        <RadioGroup
+          {...props}
+        >
+          {options.map((option, i) => (
             <FormControlLabel 
               value={option}
               key={option}
-              control={<Radio />}
+              control={<Radio sx={{padding: '0.2rem 0.5rem'}} />}
               label={props.labels ? props.labels[i] : option}
-              checked={option.toString() === value.toString()}
+              checked={option.toString() === value?.toString()}
               onChange={(e) => {
                 change(e.target.value);
-                update(e.target.value);
-                if (onInput) {
-                  onInput(e);
-                }
+                update(e, e.target.value);
               }}
             />
           ))}
         </RadioGroup>
       </>
     )
+  } else if (options) {
+    // let max = Math.max.apply(Math, options.map(option => option.description ? option.description.length : option.length));
+    const max = '100%';
+    if (!isOptionEqualToValue) {
+      isOptionEqualToValue = (option, value) => option.value === value?.value;
+    }
+
+    if (!renderInput) {
+      renderInput = (params) => {
+        return (
+          <TextField
+            autoFocus={props.autoFocus}
+            variant={props.variant || 'outlined'}
+            sx={{background: 'white', width: max, padding: 0}}
+            {...params}
+          />
+        )
+      }
+    }
+  
+    return (
+      <MUIAutocomplete
+        {...props}
+
+        id={id}
+        onKeyPress={keyPress}
+        ref={focusRef}
+
+        sx={{width: max}}
+
+        isOptionEqualToValue={isOptionEqualToValue}   // avoids warning, per https://stackoverflow.com/q/61947941/3903374
+
+        groupBy={props.groupBy}
+        getOptionLabel={props.getOptionLabel}
+        onInputChange={props.onInputChange}
+        includeInputInList={props.includeInputInList}
+        filterSelectedOptions={props.filterSelectedOptions}
+
+        renderInput={renderInput}
+        
+        options={options}
+
+        value={v}
+
+        onChange={(e, value) => {
+          update(e, value);
+        }}
+      />
+    )
   } else {
     return (
-      type === 'radio' || name ?
-        <Radio
-          {...props}
-          id={id}
-          name={name}
-          checked={val === value}
-          value={value}
-          style={{padding: 0}}
-          onChange={(e) => {
-            change(e.target.value);
-            update(e.target.value);
-            if (onInput) {
-              onInput(e);
-            }
-          }}
-        />    
-        :
       type === 'checkbox' ? 
         <Checkbox
           {...props}
@@ -178,29 +252,26 @@ const Input = ({type, name, id=name, property, index, value, onInput, immediate,
           style={{padding: 0}}
           onChange={(e) => {
             change(e.target.checked);
-            update(e.target.checked);
-            if (onInput) {
-              onInput(e);
-            }
+            update(e, e.target.checked);
           }}
         />
         :
         <>
-          {type === 'dollar' && <span style={{position: 'absolute', marginTop: '0.3rem'}}>$</span>}
           <TextField
             {...props}
             id={id}
             value={v === undefined ? '' : v}  // https://github.com/facebook/react/issues/6222
 
+            onFocus={(e) => e.target.select()}
+
             size="small"
 
-            type={type === 'dollar' ? 'number' : type || 'text'}
+            type={/dollar|percent/.test(type) ? 'number' : type || 'text'}
 
             sx={{
               display: props.fullWidth ? 'block' : 'span',
-              paddingLeft: type === 'dollar' ? '0.7rem' : 0,
               boxSizing: 'border-box',
-              marginBottom: 1,
+              marginTop: props.label ? 2 : 0,
             }}
 
             variant={props.variant || 'outlined'}
@@ -209,13 +280,14 @@ const Input = ({type, name, id=name, property, index, value, onInput, immediate,
               role: 'presentation',
               autoComplete: 'off',
               style: {
-                zpadding: 5,
+                paddingLeft: 7,
+                paddingTop: 5,
+                paddingBottom: 5,
+                maxWidth: /number|dollar|percent/.test(type) ? 70 : 1000,
                 background: 'white',
                 ...props.style
               },
             }}
-
-            InputLabelProps={{ style: { marginLeft: type === 'dollar' ? '0.7em' : 0} }}
 
             ref={focusRef}
 
@@ -227,124 +299,35 @@ const Input = ({type, name, id=name, property, index, value, onInput, immediate,
               if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.nativeEvent.preventDefault();  // for number type
               } else if (e.key === 'Enter') {
-                update(e.target.value);
+                update(e, e.target.value);
               }
             }}
             
             onChange={(e) => {
-              const value = e.target.value;
-              change(value);
-              if (immediate || e.target.form.getAttribute('options').includes('immediate')) {
-                update(value);
-              }
-              if (onInput) {
-                onInput(e);
+              change(e.target.value);
+              if (immediate || (e.target.form && (e.target.form.getAttribute('options') || '').includes('immediate'))) {
+                update(e, e.target.value);
               }
             }}
 
             onBlur={(e) => {
-              let value = e.target.value;
-              if (!(immediate || e.target.form.getAttribute('options').includes('immediate'))) {
-                update(value);
+              if (!(immediate || (e.target.form && (e.target.form.getAttribute('options') || '').includes('immediate')))) {
+                update(e, e.target.value);
+              }
+            }}
+
+            onInput={(e) => {
+              if (onInput) {
+                onInput(e);
               }
             }}
           />
+          {props.warning}
         </>
     )
   }
 } // Input
 
-const Autocomplete = ({id, index, options, value, onInput, isOptionEqualToValue, onInputChange, groupBy, renderInput, getOptionLabel, autoComplete, includeInputInList, filterSelectedOptions, onChange, context, ...props}) => {
-  const dispatch = useDispatch();
-  let val = useSelector(context ? get[context] : get[id]);
-  if (context) {
-    val = val[id];
-  }
-
-  const isArray = Array.isArray(val);
-
-  if (isArray) {
-    val = val[index];
-  }
-
-  const update = (value) => {
-    value = value === null    ? null :
-            value.description ? value.description :
-            value;
-
-    if (isArray) {
-      dispatch(set[id]({index, value}));
-    } else if (context) {
-      dispatch(set[context]({key: id, value}));
-    } else {
-      dispatch(set[id](value || ''));
-    }
-  } // update
-
-  if (!renderInput) {
-    renderInput = (params) => {
-      return (
-        <TextField
-          variant={props.variant || 'outlined'}
-          sx={{background: 'white', width: max, padding: 0}}
-          {...params}
-        />
-      )
-    }
-  }
-
-  if (!isOptionEqualToValue) {
-    isOptionEqualToValue = (option, value) => option.value === value.value;
-  }
-
-  value = value !== undefined ? value : val;
-
-  // let max = options ? Math.max.apply(Math, options.map(option => option.description ? option.description.length : option.length)) : '100%';
-  const max = '100%';
-
-  return (
-    <MUIAutocomplete
-      {...props}
-
-      onKeyPress={(e) => {
-        keyPress(e);
-      }}
-
-      sx={{width: max}}
-
-      isOptionEqualToValue={isOptionEqualToValue}   // avoids warning, per https://stackoverflow.com/q/61947941/3903374
-
-      groupBy={groupBy}
-      getOptionLabel={getOptionLabel}
-      onInputChange={onInputChange}
-      // autoComplete="off" // TODO: dang Chrome (Which of the following options best describes your Field?)
-      includeInputInList={includeInputInList}
-      filterSelectedOptions={filterSelectedOptions}
-
-      renderInput={renderInput}
-      
-      options={options}
-
-      value={value}
-
-      onChange={(e, value) => {
-        // if (value) {
-          console.log(value);
-          update(value);
-          
-          if (onInput) {
-            onInput(e);
-          }
-          if (onChange) {
-            onChange(e, value);
-          }
-        // }
-      }}
-    />
-  )
-} // Autocomplete
-
 export {
-  Autocomplete,
   Input,
 }

@@ -60,6 +60,8 @@ The default type can be overwritten using the `type` property:
 <Input id="age" type="text" />
 ```
 
+(If you want a "dollar" type for a variable that doesn't include `$` in its name, use `type="dollar"`.)
+
 ### Arrays ###
 If the store's variable is an array, include an `index` property:
 ```
