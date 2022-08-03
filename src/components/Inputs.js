@@ -77,7 +77,7 @@ const Input = ({type, id, options, isOptionEqualToValue, renderInput, index='', 
 
   let val = isArray ? sel2[index] || '' : sel2;
 
-  if (type === 'dollar' && val) {
+  if (type === 'dollar' && val && !immediate) {
     val = (+val).toFixed(2);
   }
 

@@ -2,6 +2,8 @@
 ## Development
 This is a React + Redux project.
 
+View it at https://aesl.ces.uga.edu/psa/redux-app/
+
 ### The Redux store
 
 #### Setters and getters
@@ -11,8 +13,10 @@ Given:
 ```
 const initialState = {
   firstName: '',
-  client: {
-    firstName: '',
+  deeply: {
+    nested: {
+      property: '',
+    }
   },
 };
 ```
@@ -20,23 +24,27 @@ const initialState = {
 To write to the store:
 ```
 import {set} from '../store/store';
+
 const dispatch = useDispatch();
+
 dispatch(set.firstName('John'));
-dispatch(set.client.firstName('Mary'));
+dispatch(set.deeply.nested.property('Gotcha'));
 ```
 
 To read from the store:
 ```
 import {get} from '../store/store';
+
 const firstName = useSelector(get.firstName);
-const clientfirstName = useSelector(get.client.firstName);
+const clientfirstName = useSelector(get.deeply.nested.property);
 ```
 
-You can still access the store like this:
+Note that you can still read from the store like this:
 ```
 import {get} from '../store/store';
+
 const firstName = useSelector(state => state.firstName);
-const clientfirstName = useSelector(state => state.client.firstName);
+const clientfirstName = useSelector(state => state.deeply.nested.property);
 ```
 
 The `get` methods are simply syntactic sugar, which *may* be slightly slower for deeply nested properties.
@@ -49,26 +57,19 @@ Setters often need side effects.  Because setters are automatically created, we 
 
 The `afterChange` object in the store accomplishes this.
 
-For example, this sets the default rate, price, and expected fertilizer N credit based on the species selected:
+For example, this sets the document's title whenever `firstName` changes, and it outputs "Whoo hoo!" whenever `deeply.nested.property` changes:
 
 ```
 const afterChange = {
-  // ...
-  species: (state, action) => {
-    const {index, value} = action.payload;
-    if (Number.isFinite(index)) {
-      state.rates[index] = (state.dbseedList[value] || {}).seedingRate || '';
-      state.prices[index] = (state.dbseedList[value] || {}).price || '';
-      state.focus = `rates${index}`;
-      const fertN = (state.dbseedList[value] || {}).NCredit || '';
-      if (fertN) {
-        state.fertN = fertN;
-      }
-    }
+  firstName: (state, action) => {
+    document.title = `Welcome ${state.firstName}`;
   },
-  // ...
-}  
+  'deeply.nested.property': (state, action) => {
+    console.log('Whoo hoo!');
+  },
+};
 ```
+
 
 #### "Functional" state properties ####
 
@@ -77,12 +78,11 @@ const afterChange = {
 In this example, `fullName` will be calculated whenever `firstName` or `lastName` changes:
 
 ```
-let initialState = {
+const initialState = {
   firstName: '',
   lastName: '',
-  fullName: (state) => state.firstName + ' ' + state.lastName,
-  ...
-}
+  fullName: (state) => state.firstName + ' ' + state.lastName
+};
 ```
 
 `fullName` can then be accessed like any other state property:
@@ -90,13 +90,40 @@ let initialState = {
 const fullName = useSelector(get.fullName);
 ```
 
+Note that the depth of the properties does not matter, so both of these work:
+
+```
+const initialState = {
+  firstName: '',
+  lastName: '',
+  deeply: {
+    nested: {
+      fullName: (state) => state.firstName + ' ' + state.lastName
+    }
+  },
+};
+```
+
+```
+const initialState = {
+  fullName: (state) => state.deeply.nested.firstName + ' ' + state.deeply.nested.lastName
+  deeply: {
+    nested: {
+      firstName: '',
+      lastName: '',
+    }
+  },
+};
+```
+
+
 A side benefit:  Functional properties are calculated *only* when the properties they rely on change.  This means that they are "auto" memoized.
 
 ##### How it works #####
 
 The Redux store accepts a "serializable" state only, so `initialState` generally can't contain method calls.
 
-Before sending `initialState` to the store, the program iterates through it (recursively for nested objects), pulling out methods and changing those properties' values to undefined.
+Before sending `initialState` to the store, the program iterates through it (recursively for nested objects), pulling out methods and changing those properties' values to their calculated values.
 
 It parses each method's definition, looking for properties that the method references.  (In our example, `fullName`'s method references `firstName` and `lastName`.)
 
@@ -241,7 +268,7 @@ If the radio buttons' labels should be different from their values, do this:
 
 In JavaScript, `onChange()` isn't triggered until after the input is entered or blurred.  In Material UI, it's triggered after every keystroke, which is more like JavaScript's `onInput()` event.
 
-There are disadvantages to Material UI's `onChange()` event, because we don't want a render on every keystroke.  For this reason, the `onChange()` event for `<Input>` components works like JavaScript's method, but with one difference:  It will return the element's value as a second parameter:
+There are disadvantages to Material UI's `onChange()` event, because we don't necessarily want to render on every keystroke.  For this reason, the `onChange()` event for `<Input>` components works like JavaScript's method, but with one difference:  It will return the element's value as a second parameter:
 
 ```
   onChange={(event, newValue) => {

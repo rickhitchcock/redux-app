@@ -4,16 +4,14 @@ const initialState = {
   focus: null,
   firstName: '',
   lastName: '',
-  fullName: (state) => state.firstName + ' ' + state.lastName,
   random: (state) => Math.random(state.fullName),
   address: '',
   city: '',
-  client: {
-    firstName: '',
-    lastName: '',
-    fullName: (state) => state.client.firstName + ' ' + state.client.lastName,
-    address: '',
-    city: '',
+  deeply: {
+    nested: {
+      property: '',
+      fullName: (state) => state.firstName + ' ' + state.lastName,
+    }
   },
   privacy: false,
   age: undefined,
@@ -40,7 +38,15 @@ const processMethods = ((state, key) => {
   }
 });
 
-const afterChange = {};
+const afterChange = {
+  firstName: (state, action) => {
+    document.title = `Welcome ${state.firstName}`;
+    console.log('Whoo hoo!');
+  },
+  'deeply.nested.property': (state, action) => {
+    console.log('Whoo hoo!');
+  },
+};
 
 const builders = (builder) => {
   const recurse = (obj, set, get, parents = []) => {
@@ -65,7 +71,7 @@ const builders = (builder) => {
           let m = obj[key].toString().match(/\b(state|e)\b\.[$_\w.(]+/g);  // state.* unbuilt, e.* built
           if (m) {
             console.log(m);
-            m = m.map(s => s.split(/\./).slice(1).join('.')?.split(/\.\w+\(/)[0]);  // remove .forEach(, etc.
+            m = m.map(s => s.split(/\./).slice(1).join('.')?.split(/\.\w+\(/)[0].replace('.length', ''));  // remove .forEach(, etc.
             console.log(m);
             // m = m.map(s => s.split(/\./)[1]);  // remove .forEach(, etc.
             m.forEach(m => {

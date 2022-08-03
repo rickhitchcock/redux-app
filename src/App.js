@@ -23,7 +23,7 @@ const Crops = () => {
   const crops = useSelector(get.crops);
 
   return (
-    <>
+    <form>
       <h3>Crops</h3>
       {crops.map((_, i) => {
         return (
@@ -32,6 +32,7 @@ const Crops = () => {
             index={i}
             key={i}
             autoFocus={i === crops.length - 1}
+            fullWidth
           />
         )
       })}
@@ -40,25 +41,11 @@ const Crops = () => {
         index={crops.length}
         key={crops.length}
         style={{background: '#eee'}}
+        fullWidth
       />
-    </>
+    </form>
   )
 }
-
-const Client = () => {
-  console.log('Render: Client');
-  useSelector(get.client);
-
-  return (
-    <>
-      <Input id="client.firstName" label="client.firstName" immediate fullWidth />
-      <Input id="client.lastName"  label="client.lastName"  immediate fullWidth />
-      <Input id="client.fullName"  label="client.fullName"  fullWidth />
-      <Input id="client.address"   label="client.address"   fullWidth />
-      <Input id="client.city"      label="client.city"      fullWidth />
-    </>
-  )
-} // Client
 
 const App = () => {
   console.log('Render: App');
@@ -74,28 +61,27 @@ const App = () => {
           dispatch(set.address('123 Main Street'));
           dispatch(set.city('Athens'));
           dispatch(set.age(30));
-          dispatch(set.client.firstName('Mary'));
-          dispatch(set.client.lastName('Doe'));
-          dispatch(set.client.address('125 Elm Street'));
-          dispatch(set.client.city('Metropolis'));
+          dispatch(set.deeply.nested.property('Gotcha'));
         }}
       >
         Fill
       </button>
 
       <button
-        onClick={() => dispatch(set.focus('client.firstName'))}
+        onClick={() => dispatch(set.focus('address'))}
       >
-        Focus client
+        Focus address
       </button>
       <hr/>
-      <form style={{width: '25rem'}}>
-        <Input id="firstName" label="firstName" fullWidth immediate autoFocus/>
-        <Input id="lastName"  label="lastName"  fullWidth immediate />
-        <Input id="address"   label="address"   fullWidth />
-        <Input id="city"      label="city"      fullWidth />
-        <Input id="age"       label="age"       fullWidth />
-        <Input id="$price"    label="$price"    fullWidth />
+      <form options="immediate" style={{width: '25rem'}}>
+        <Input id="firstName"               label="firstName"               fullWidth autoFocus />
+        <Input id="lastName"                label="lastName"                fullWidth />
+        <Input id="deeply.nested.fullName"  label="deeply.nested.fullName"  fullWidth />
+        <Input id="address"                 label="address"                 fullWidth />
+        <Input id="city"                    label="city"                    fullWidth />
+        <Input id="age"                     label="age"                     fullWidth />
+        <Input id="$price"                  label="$price"                  fullWidth />
+        <Input id="deeply.nested.property"  label="deeply.nested.property"  fullWidth />
         <hr/>
         <label>
           Privacy:
@@ -111,10 +97,8 @@ const App = () => {
           type="radio"
         />
         <hr/>
-        <Crops />
-        <hr/>
-        <Client />
       </form>
+      <Crops />
       <hr/>
       <Summary/>
     </>
