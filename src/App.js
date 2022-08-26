@@ -72,6 +72,16 @@ const App = () => {
       >
         Focus address
       </button>
+
+      <button
+        onClick={() => {
+          dispatch({type: 'exampleName'});
+          dispatch({type: 'exampleAddress'});
+        }}
+      >
+        Other reducers
+      </button>
+
       <hr/>
       <form options="immediate" style={{width: '25rem'}}>
         <Input id="firstName"               label="firstName"               fullWidth autoFocus />

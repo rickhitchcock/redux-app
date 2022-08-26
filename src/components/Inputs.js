@@ -35,7 +35,7 @@ const keyPress = (event) => {
 } // keyPress
 
 const Input = ({type, id, options, isOptionEqualToValue, renderInput, index='', value, onChange, onInput, ...props}) => {
-  console.log(`Render: Input ${id}`);
+  // console.log(`Render: Input ${id}`);
   const dispatch = useDispatch();
 
   let obj = id;
@@ -84,7 +84,7 @@ const Input = ({type, id, options, isOptionEqualToValue, renderInput, index='', 
     if (!immediate && form) {
       setImmediate((form.getAttribute('options') || '').includes('immediate'));
     }
-    console.log(id, focusRef.current?.closest('form'));
+    // console.log(id, focusRef.current?.closest('form'));
   }, [immediate, focusRef, id]);
 
   if (type === 'dollar' && val && !immediate) {
